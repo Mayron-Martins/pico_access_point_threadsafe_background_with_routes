@@ -112,32 +112,45 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
     state->headers[copy_len] = '\0'; // Null-terminate the received data
 
     http_response_t response;
-    // Inicializar content_type para evitar problemas de dados não inicializados se routes.c não o definir
-    strcpy(response.content_type, "text/plain");
-    response.status_code = 500; // Padrão para erro interno do servidor
-    response.body = "Internal Server Error";
-    response.body_len = strlen(response.body);
-
+    init_http_response(&response);
+    
     handle_route(state->headers, &response);
 
-    state->body = response.body;
-    state->body_len = response.body_len;
-    state->header_len = build_http_headers(state->headers, sizeof(state->headers),
-                                            response.status_code, response.content_type, response.body_len);
+     // Buffer temporário para a linha de status e cabeçalhos
+    char http_response_buffer[MAX_HEADERS_SIZE + 256]; // Cabeçalhos + Linha de Status + \r\n\r\n
+    int offset = 0;
 
-    err_t wr_err = tcp_write(tpcb, state->headers, state->header_len, TCP_WRITE_FLAG_COPY);
+    // 1. Linha de Status
+    offset += sprintf(http_response_buffer + offset, "HTTP/1.1 %d %s\r\n",
+                      response.status_code, response.status_message);
+
+    // 2. Adicionar cabeçalhos coletados em http_response.headers
+    offset += sprintf(http_response_buffer + offset, "%s", response.headers);
+
+    // 3. Adicionar Content-Length (se não foi explicitamente adicionado em routes.c)
+    if (!strstr(response.headers, "Content-Length")) {
+        offset += sprintf(http_response_buffer + offset, "Content-Length: %zu\r\n", response.body_len);
+    }
+
+    // 4. Linha em branco para separar cabeçalhos do corpo
+    offset += sprintf(http_response_buffer + offset, "\r\n");
+
+    // Enviar cabeçalhos e a linha de status
+    err_t wr_err = tcp_write(tpcb, http_response_buffer, offset, TCP_WRITE_FLAG_COPY);
     if (wr_err != ERR_OK) {
         printf("Error writing HTTP headers: %d\n", wr_err);
+        free_http_response(&response); // <<< IMPORTANTE: Liberar memória em caso de erro
         close_connection(tpcb, state);
         pbuf_free(p);
         return wr_err;
     }
 
-    // Only send the body if there is one
-    if (state->body && state->body_len > 0) {
-        wr_err = tcp_write(tpcb, state->body, state->body_len, TCP_WRITE_FLAG_COPY);
+    // Enviar o corpo
+    if (response.body && response.body_len > 0) {
+        wr_err = tcp_write(tpcb, response.body, response.body_len, TCP_WRITE_FLAG_COPY);
         if (wr_err != ERR_OK) {
             printf("Error writing HTTP body: %d\n", wr_err);
+            free_http_response(&response); // <<< IMPORTANTE: Liberar memória em caso de erro
             close_connection(tpcb, state);
             pbuf_free(p);
             return wr_err;
@@ -145,6 +158,9 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
     }
 
     tcp_output(tpcb);
+
+    // Limpeza: Liberar a memória alocada para o corpo da resposta
+    free_http_response(&response);
 
     // Definir retorno de chamada para fechar a conexão depois que os dados forem enviados
     tcp_sent(tpcb, on_sent_close_connection);

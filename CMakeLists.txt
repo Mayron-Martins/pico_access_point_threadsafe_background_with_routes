@@ -39,6 +39,7 @@ add_executable(pico_access_point_with_routes
     main.c
     dhcpserver/dhcpserver.c
     dnsserver/dnsserver.c
+    src/http_response.c
     src/http_server.c
     src/http_utils.c
     src/routes.c
