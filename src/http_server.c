@@ -71,18 +71,15 @@ static err_t on_sent_close_connection(void *arg, struct tcp_pcb *tpcb, u16_t len
  */
 static err_t tcp_server_sent(void *arg, struct tcp_pcb *tpcb, u16_t len) {
     connection_state_t *state = (connection_state_t *)arg;
-    // In your routes.c, the body is a string literal.
-    // If you were allocating the body dynamically, you would free it here.
-    // For string literals, setting to NULL is fine.
+    // Em seu routes.c, o body é uma string literal.
+    // Se você estivesse alocando o body dinamicamente, você o liberaria aqui.
+    // Para literais de string, definir como NULL é bom.
     if (state->body) {
-        // If there's still data to send, send it. This logic is a bit
-        // simplified given your use of on_sent_close_connection.
-        // For larger bodies, you might need more sophisticated chunking.
         err_t err = tcp_write(tpcb, state->body, state->body_len, TCP_WRITE_FLAG_COPY);
-        state->body = NULL; // Indicate body has been sent
+        state->body = NULL;
         return err;
     }
-    close_connection(tpcb, state); // Close connection after all data is sent
+    close_connection(tpcb, state); // Fechar a conexão depois que todos os dados forem enviados
     return ERR_OK;
 }
 
@@ -97,12 +94,11 @@ static err_t tcp_server_sent(void *arg, struct tcp_pcb *tpcb, u16_t len) {
  */
 static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
     if (!p) {
-        // Connection closed by client
+        // Conexão fechada pelo cliente
         close_connection(tpcb, (connection_state_t *)arg);
         return ERR_OK;
     }
 
-    // Check for errors
     if (err != ERR_OK) {
         pbuf_free(p);
         return err;
@@ -110,15 +106,15 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
 
     connection_state_t *state = (connection_state_t *)arg;
 
-    // Ensure we don't overflow our headers buffer
+    // Assegurar que o buffer de cabeçalhos não fique cheio
     size_t copy_len = p->tot_len < sizeof(state->headers) ? p->tot_len : sizeof(state->headers) - 1;
     pbuf_copy_partial(p, state->headers, copy_len, 0);
     state->headers[copy_len] = '\0'; // Null-terminate the received data
 
     http_response_t response;
-    // Initialize content_type to avoid uninitialized data issues if routes.c doesn't set it
+    // Inicializar content_type para evitar problemas de dados não inicializados se routes.c não o definir
     strcpy(response.content_type, "text/plain");
-    response.status_code = 500; // Default to internal server error
+    response.status_code = 500; // Padrão para erro interno do servidor
     response.body = "Internal Server Error";
     response.body_len = strlen(response.body);
 
@@ -148,11 +144,11 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
         }
     }
 
-    tcp_output(tpcb); // send data immediately
+    tcp_output(tpcb);
 
-    // Set callback to close connection after data is sent
+    // Definir retorno de chamada para fechar a conexão depois que os dados forem enviados
     tcp_sent(tpcb, on_sent_close_connection);
-    // Important: Acknowledge the received data
+    // Importante: Confirme os dados recebidos
     tcp_recved(tpcb, p->tot_len);
 
     pbuf_free(p);
@@ -183,9 +179,9 @@ static err_t tcp_server_accept(void *arg, struct tcp_pcb *newpcb, err_t err) {
     tcp_arg(newpcb, state);
     tcp_recv(newpcb, tcp_server_recv);
     tcp_sent(newpcb, tcp_server_sent);
-    // You might also want a poll callback for timeouts, similar to main2.c
+    // Caso queira um poll callback quanto a timeouts
     // tcp_poll(newpcb, tcp_server_poll, POLL_TIME_S * 2);
-    // And an error callback
+    // E o Callback de Erro
     // tcp_err(newpcb, tcp_server_err);
     return ERR_OK;
 }
@@ -199,31 +195,26 @@ static err_t tcp_server_accept(void *arg, struct tcp_pcb *newpcb, err_t err) {
  *      - Usa `tcp_accept` para registrar o callback de conexões.
  */
 void http_server_start(void) {
-    // IMPORTANT: Remove cyw43_arch_init() and cyw43_arch_enable_sta_mode()
-    // These should be handled once in main.c before calling network_setup.
-
     printf("HTTP server starting on port %d\n", HTTP_PORT);
 
     struct tcp_pcb *pcb = tcp_new_ip_type(IPADDR_TYPE_ANY);
     if (!pcb) {
         printf("Failed to create PCB\n");
-        return; // No return value to indicate error in void function, consider changing signature
+        return;
     }
 
-    // Bind to the correct interface for AP mode (NULL for any interface, including AP)
-    if (tcp_bind(pcb, IP_ANY_TYPE, HTTP_PORT) != ERR_OK) { // Use IP_ANY_TYPE to bind to any available interface
+    if (tcp_bind(pcb, IP_ANY_TYPE, HTTP_PORT) != ERR_OK) {
         printf("Failed to bind TCP\n");
-        tcp_close(pcb); // Close PCB if binding fails
+        tcp_close(pcb);
         return;
     }
 
     struct tcp_pcb *listen_pcb = tcp_listen_with_backlog(pcb, 1);
     if (!listen_pcb) {
         printf("Failed to listen for TCP connections\n");
-        tcp_close(pcb); // Close PCB if listen fails
+        tcp_close(pcb);
         return;
     }
-    // No specific argument needed for the server_pcb if not maintaining server-wide state
-    // tcp_arg(listen_pcb, NULL); // Or pass a pointer to a server state struct if needed
+
     tcp_accept(listen_pcb, tcp_server_accept);
 }
