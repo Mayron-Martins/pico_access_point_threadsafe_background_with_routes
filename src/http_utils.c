@@ -1,5 +1,6 @@
 /**
  * -----------------------------------------------
+ * Author: Mayron Martins da Silva
  * Arquivo: http_utils.c 
  * Projeto: pico_access_point_with_routes
  * -----------------------------------------------

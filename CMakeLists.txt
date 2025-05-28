@@ -66,7 +66,6 @@ target_include_directories(pico_access_point_with_routes PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/dhcpserver
         ${CMAKE_CURRENT_LIST_DIR}/dnsserver
         ${CMAKE_CURRENT_LIST_DIR}/lib
-        ${CMAKE_CURRENT_LIST_DIR}/src
 )
 
 pico_add_extra_outputs(pico_access_point_with_routes)

@@ -1,5 +1,6 @@
 /**
  * -----------------------------------------------
+ * Author: Mayron Martins da Silva
  * Arquivo: http_response.c 
  * Projeto: epico_access_point_with_routes
  * -----------------------------------------------
