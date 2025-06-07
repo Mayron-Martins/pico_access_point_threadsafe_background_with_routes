@@ -120,7 +120,7 @@ static void set_response(http_response_t *response, char *html_content){
 void handle_route(const char *request, http_response_t *response) {
     if (strncmp(request, "GET / ", 6) == 0 || strncmp(request, "GET /index", 10) == 0) {
         char *html_content = get_html_content();
-        set_response_body(response, html_content);
+        set_response(response, html_content);
 
     } else {
         set_response_status(response, 404, "Not Found");
