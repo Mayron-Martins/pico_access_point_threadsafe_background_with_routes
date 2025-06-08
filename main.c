@@ -19,7 +19,7 @@ int main() {
     if(network_setup()) return 1;
 
     while (true) {
-        cyw43_arch_poll(); // processa eventos do Wi-Fi/lwIP
+        tight_loop_contents();
         sleep_ms(1);
     }
 

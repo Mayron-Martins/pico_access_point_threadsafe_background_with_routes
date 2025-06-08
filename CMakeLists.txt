@@ -56,7 +56,8 @@ pico_enable_stdio_usb(pico_access_point_with_routes 1)
 # Add the standard library to the build
 target_link_libraries(pico_access_point_with_routes
         pico_stdlib
-        pico_cyw43_arch_lwip_poll
+        #hardware_adc
+        pico_cyw43_arch_lwip_threadsafe_background
         hardware_uart
 )
 
@@ -74,7 +75,7 @@ pico_add_extra_outputs(pico_access_point_with_routes)
 pico_configure_ip4_address(pico_access_point_with_routes PRIVATE CYW43_DEFAULT_IP_AP_ADDRESS 192.168.4.1)
 
 target_compile_definitions(pico_access_point_with_routes PRIVATE 
-    PICO_CYW43_ARCH_POLL=1
+    PICO_CYW43_ARCH_THREADSAFE_BACKGROUND=1
     CYW43_LWIP=1
     LWIP_IPV4=1
     LWIP_DHCP=1

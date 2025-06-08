@@ -16,17 +16,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//Rota inicial
+static route_info_t root_route = {
+    .path = "GET / ",
+    .length = sizeof("GET / ") - 1
+};
 
-/**
- * [Descrição]: Gera e retorna o conteúdo HTML completo como string alocada.
- * [Parâmetros]: 
- *  - nenhum
- * [Notas]: 
- *  - A string retornada é alocada dinamicamente com `malloc`.
- *  - O chamador é responsável por liberar a memória alocada com `free`.
- */
-static char* get_html_content() {
-    const char* html_template =
+// O template HTML fixo
+static const char* HTML_TEMPLATE =
         "<!DOCTYPE html>\n"
         "<html lang=\"pt-BR\">\n"
         "<head>\n"
@@ -77,10 +74,19 @@ static char* get_html_content() {
         "</body>\n"
         "</html>\n";
 
-    size_t len = strlen(html_template);
+/**
+ * [Descrição]: Gera e retorna o conteúdo HTML completo como string alocada.
+ * [Parâmetros]: 
+ *  - nenhum
+ * [Notas]: 
+ *  - A string retornada é alocada dinamicamente com `malloc`.
+ *  - O chamador é responsável por liberar a memória alocada com `free`.
+ */
+static char* get_html_content() {
+    size_t len = strlen(HTML_TEMPLATE);
     char* html_content = (char*)malloc(len + 1);
     if (html_content) {
-        strcpy(html_content, html_template);
+        strcpy(html_content, HTML_TEMPLATE);
     }
     return html_content;
 }
@@ -118,7 +124,7 @@ static void set_response(http_response_t *response, char *html_content){
  *      - Qualquer outra rota resulta em erro 404 com texto simples.
  */
 void handle_route(const char *request, http_response_t *response) {
-    if (strncmp(request, "GET / ", 6) == 0 || strncmp(request, "GET /index", 10) == 0) {
+    if (strncmp(request, root_route.path, root_route.length) == 0) {
         char *html_content = get_html_content();
         set_response(response, html_content);
 

@@ -16,6 +16,7 @@
 #include "lwip/netif.h"
 #include "http_server.h"
 #include "wifi_config.h"
+#include "cyw43_config.h"
 
 dhcp_server_t dhcp_server;
 dns_server_t dns_server;
@@ -40,11 +41,11 @@ int network_setup(void) {
     cyw43_arch_enable_ap_mode(WIFI_SSID, WIFI_PASS, WIFI_AUTH);
     printf("Access Point iniciado: EVACUATION_ALARM\n");
 
-    // Configuração manual dos endereços IP
+    // Configuração automática dos endereços IP com o padrão CYW43
     ip4_addr_t ap_ip, ap_netmask, ap_gw;
-    IP4_ADDR(&ap_gw, 192, 168, 4, 1);
-    IP4_ADDR(&ap_netmask, 255, 255, 255, 0);
-    IP4_ADDR(&ap_ip, 192, 168, 4, 1);
+    ip4_addr_set_u32(&ap_gw, PP_HTONL(CYW43_DEFAULT_IP_AP_ADDRESS));
+    ip4_addr_set_u32(&ap_netmask, PP_HTONL(CYW43_DEFAULT_IP_MASK));
+    ip4_addr_set_u32(&ap_ip, PP_HTONL(CYW43_DEFAULT_IP_AP_ADDRESS));
 
     // Configuração da interface de rede
     cyw43_arch_lwip_begin();

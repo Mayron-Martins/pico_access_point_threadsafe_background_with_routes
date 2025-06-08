@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alarme para Treinamentos de Brigadas e Evacuação</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100dvh;
+            min-width: 100dvw;
+            flex-direction: column;
+        }
+        .main {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        h1 {
+            color: #1a1a1a;
+        }
+        a {
+            width: 8rem;
+            padding: 1rem 0;
+            text-align: center;
+            border-radius: 6px;
+            border: 3px solid #1a1a1a;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .button-on {
+            background-color: #CC4800;
+            color: #F1F1F1;
+        }
+        .button-off {
+            margin-top: 10px;
+            background-color: #F1F1F1;
+            color: #1a1a1a;
+        }
+        .button-on.inative{
+            background-color: #F1F1F1;
+            color: #1a1a1a;
+        }
+        .button-off.active {
+            background-color: #187899;
+            color: #F1F1F1;
+        }
+        .footer {
+            margin-top: 1.25rem;
+            font-size: 0.8em;
+            color: #888888;
+        }
+    </style>
+    <script>
+        addEventListener('DOMContentLoaded', function(){
+            const buttonOn = document.querySelector('.button-on');
+            const buttonOff = document.querySelector('.button-off');
+
+            if(window.location.href.includes('/ligar')){
+                buttonOn.classList.add('inative');
+                buttonOff.classList.add('active');
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="main">
+        <h1>Alarme de Emergência</h1>
+        <a class="button-on" href="/ligar">Ligar</a>
+        <a class="button-off" href="/desligar">Desligar</a>
+    </div>
+    <div class="footer">
+        <p>&copy; Embarca Tech 2025. Todos os direitos reservados.</p>
+    </div>
+</body>
+</html>
