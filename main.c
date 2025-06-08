@@ -5,7 +5,6 @@
  */
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
-#include "http_server.h"
 #include "setup.h"
 
 
