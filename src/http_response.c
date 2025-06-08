@@ -61,16 +61,26 @@ void set_response_status(http_response_t *response, int code, const char *messag
  *  - Garante que não ultrapasse o tamanho do buffer de cabeçalhos.
  */
 void add_response_header(http_response_t *response, const char *key, const char *format, ...) {
-    if (response && response->headers_len < sizeof(response->headers) - 2) { // Deixa espaço para \r\n\0
+    if (response) {
         char value_buffer[256]; // Buffer temporário para o valor do cabeçalho formatado
         va_list args;
         va_start(args, format);
         int written = vsnprintf(value_buffer, sizeof(value_buffer), format, args);
         va_end(args);
 
-        if (written > 0 && response->headers_len + strlen(key) + written + 4 < sizeof(response->headers)) { // key: value\r\n
-            sprintf(response->headers + response->headers_len, "%s: %s\r\n", key, value_buffer);
-            response->headers_len += strlen(key) + written + 4;
+        size_t remaining_space = sizeof(response->headers) - response->headers_len;
+
+        if (written > 0 && written < sizeof(value_buffer)) {
+            int written_result = snprintf(response->headers + response->headers_len,
+                                          remaining_space,
+                                          "%s: %s\r\n",
+                                          key, value_buffer);
+            if (written_result > 0 && written_result < remaining_space) {
+                response->headers_len += written_result;
+            } else if (written_result >= remaining_space) { //Excedeu o espaço disponível.
+                printf("WARNING: Header truncated or too long for response.headers buffer.\n");
+                response->headers_len = sizeof(response->headers) - 1; // Preencher o buffer até o final
+            }
         }
     }
 }

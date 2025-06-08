@@ -16,19 +16,8 @@ int main() {
         sleep_ms(100);
     }
 
-    if (cyw43_arch_init()) {
-        printf("Erro ao iniciar Wi-Fi\n");
-        return 1;
-    }
-
-    // Cria Access Point com SSID e senha
-    cyw43_arch_enable_ap_mode("EVACUATION_ALARM", "senha123", CYW43_AUTH_WPA2_AES_PSK);
-    printf("Access Point iniciado: EVACUATION_ALARM\n");
-
     //Iniciar configurações de rede (DNS, DHCP e HTTP)
-    network_setup();
-
-    sleep_ms(2000); //Intervalo para estabilização
+    if(network_setup()) return 1;
 
     while (true) {
         cyw43_arch_poll(); // processa eventos do Wi-Fi/lwIP

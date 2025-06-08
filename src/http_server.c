@@ -22,7 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define HTTP_PORT 80
+#define TCP_PORT 80
 
 typedef struct {
     struct tcp_pcb *client_pcb;
@@ -120,21 +120,39 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
      // Buffer temporário para a linha de status e cabeçalhos
     char http_response_buffer[MAX_HEADERS_SIZE + 256]; // Cabeçalhos + Linha de Status + \r\n\r\n
     int offset = 0;
+    size_t buffer_total_size = sizeof(http_response_buffer);
 
     // 1. Linha de Status
-    offset += sprintf(http_response_buffer + offset, "HTTP/1.1 %d %s\r\n",
+    offset += snprintf(http_response_buffer + offset, buffer_total_size - offset,
+                      "HTTP/1.1 %d %s\r\n",
                       response.status_code, response.status_message);
 
     // 2. Adicionar cabeçalhos coletados em http_response.headers
-    offset += sprintf(http_response_buffer + offset, "%s", response.headers);
+    if (offset < buffer_total_size) {
+        offset += snprintf(http_response_buffer + offset, buffer_total_size - offset,
+                          "%s", response.headers);
+    }
 
     // 3. Adicionar Content-Length (se não foi explicitamente adicionado em routes.c)
     if (!strstr(response.headers, "Content-Length")) {
-        offset += sprintf(http_response_buffer + offset, "Content-Length: %zu\r\n", response.body_len);
+        if (offset < buffer_total_size) {
+            offset += snprintf(http_response_buffer + offset, buffer_total_size - offset,
+                              "Content-Length: %zu\r\n", response.body_len);
+        }
     }
 
     // 4. Linha em branco para separar cabeçalhos do corpo
-    offset += sprintf(http_response_buffer + offset, "\r\n");
+    if (offset < buffer_total_size) {
+        offset += snprintf(http_response_buffer + offset, buffer_total_size - offset, "\r\n");
+    }
+    
+    if (offset >= buffer_total_size) {
+        offset = buffer_total_size - 1; // Garante null-termination se houve truncamento crítico
+        http_response_buffer[offset] = '\0';
+        printf("WARNING: HTTP response buffer overflowed. Response might be truncated.\n");
+    } else {
+        http_response_buffer[offset] = '\0'; // Garantir que está null-terminado
+    }
 
     // Enviar cabeçalhos e a linha de status
     err_t wr_err = tcp_write(tpcb, http_response_buffer, offset, TCP_WRITE_FLAG_COPY);
@@ -212,7 +230,7 @@ static err_t tcp_server_accept(void *arg, struct tcp_pcb *newpcb, err_t err) {
  *      - Usa `tcp_accept` para registrar o callback de conexões.
  */
 void http_server_start(void) {
-    printf("HTTP server starting on port %d\n", HTTP_PORT);
+    printf("HTTP server starting on port %d\n", TCP_PORT);
 
     struct tcp_pcb *pcb = tcp_new_ip_type(IPADDR_TYPE_ANY);
     if (!pcb) {
@@ -220,7 +238,7 @@ void http_server_start(void) {
         return;
     }
 
-    if (tcp_bind(pcb, IP_ANY_TYPE, HTTP_PORT) != ERR_OK) {
+    if (tcp_bind(pcb, IP_ANY_TYPE, TCP_PORT) != ERR_OK) {
         printf("Failed to bind TCP\n");
         tcp_close(pcb);
         return;

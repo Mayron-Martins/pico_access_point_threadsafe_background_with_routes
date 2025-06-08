@@ -8,6 +8,6 @@
 extern dhcp_server_t dhcp_server;
 extern dns_server_t dns_server;
 
-void network_setup(void);
+int network_setup(void);
 
 #endif // SETUP_H

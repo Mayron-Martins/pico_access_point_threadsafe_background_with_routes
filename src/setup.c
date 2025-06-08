@@ -15,6 +15,7 @@
 #include "lwip/ip4_addr.h"
 #include "lwip/netif.h"
 #include "http_server.h"
+#include "wifi_config.h"
 
 dhcp_server_t dhcp_server;
 dns_server_t dns_server;
@@ -29,7 +30,16 @@ dns_server_t dns_server;
  *  - Configura a interface de rede via `cyw43_arch_lwip_begin/end`.
  *  - O servidor HTTP é iniciado após DHCP e DNS.
  */
-void network_setup(void) {
+int network_setup(void) {
+    if (cyw43_arch_init()) {
+        printf("Erro ao iniciar Wi-Fi\n");
+        return 1;
+    }
+
+    // Cria Access Point com SSID e senha
+    cyw43_arch_enable_ap_mode(WIFI_SSID, WIFI_PASS, WIFI_AUTH);
+    printf("Access Point iniciado: EVACUATION_ALARM\n");
+
     // Configuração manual dos endereços IP
     ip4_addr_t ap_ip, ap_netmask, ap_gw;
     IP4_ADDR(&ap_gw, 192, 168, 4, 1);
@@ -53,4 +63,8 @@ void network_setup(void) {
     // Start HTTP server (moved from main.c)
     http_server_start();
     printf("HTTP Server started\n");
+
+    sleep_ms(2000); //Intervalo para estabilização
+
+    return 0;
 }
